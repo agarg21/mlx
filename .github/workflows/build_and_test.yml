@@ -69,9 +69,11 @@ jobs:
           toolkit: ${{ matrix.toolkit }}
       - uses: ./.github/actions/build
         with:
-          cmake-args: ${{ steps.setup.outputs.cmake-args }}
+          # Linux CPU lanes: optimized build that keeps assertions (-O2 without
+          # -DNDEBUG); the Python test suite runs ~4x faster than on Debug.
+          cmake-args: ${{ steps.setup.outputs.cmake-args }} ${{ matrix.os == 'Linux' && matrix.toolkit == 'cpu' && '-DCMAKE_CXX_FLAGS_RELEASE=-O2' || '' }}
           # For MSVC, Ninja/Release is the only config supported by ccache.
-          debug: ${{ matrix.os != 'Windows' }}
+          debug: ${{ matrix.os != 'Windows' && matrix.toolkit != 'cpu' }}
       - name: Check generated Python stubs with ty
         if: matrix.os == 'Linux' && matrix.arch == 'x86_64' && matrix.toolkit == 'cpu'
         run: uvx ty check python/mlx/core
